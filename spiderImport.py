@@ -25,13 +25,16 @@ def main():
     #将爬取的网页放入datalist里
     datalist = get_data(baseurl)
     #生成excel文件，将获取对数据存入该文件中
-    savepath = "doubanTop250.xls"
-    saveData(datalist, savepath)
+    #savepath = "doubanTop250.xls"
+    print("Finished Python crawler")
+    dbpath = "Movie.db"
+    #存入数据库
+    #saveData(datalist, savepath)
+    saveData2DB(datalist, dbpath)
+    print("Successfully save")
 
     #askURL("https://movie.douban.com/top250?start=")
     #调用askURL方法， 该方法实现了伪装，会返回爬取后的string类型的数据
-
-
 
 
 def get_data(baseurl):  #获取数据，方便调用，返回数据列表
@@ -84,15 +87,8 @@ def get_data(baseurl):  #获取数据，方便调用，返回数据列表
             bd = re.sub('<br(\s+)?/>(\s+)?'," ",bd)   #去掉<br/>
             bd = re.sub("\n", " ", bd)
             bd = re.sub("/", '', bd)   #再把/替换为空格
-
             data.append(bd.strip())  #strip()去掉前后的空格
-
             datalist.append(data)    #把处理好的一部电影的信息放入datalist
-
-
-
-
-
 
             # for span in soup.find_all("span",class_="title"):
         #     print(span)  # 爬取符合网页属性的数据 这样就能找到想要的东西。
@@ -138,6 +134,57 @@ def saveData(datalist, savepath):
     book.save(savepath)
 
 
+def saveData2DB(datalist, dbpath):
+    init_db(dbpath)
+    conn = sqlite3.connect(dbpath)
+    cursor = conn.cursor()
+    for data in datalist:
+        #datalist是250个list 组成
+        #把datalist中的每个list依次赋值给data, 也就是一个data就是一个list
+        for index in range(len(data)):
+            #表示data列表的长度，也就是列表中的元素个数
+            #把一个data(本身是list）中的每一个元素提取出来依次赋值给index
+            if index == 4 or index == 5:
+                continue
+            data[index] = '"'+data[index]+'"'
+            #把每一个元素都添加”“来转换为string语句，用于数据库的插入，但并不是每个字符都需要转为string
+            #这样先把一个data（本身是list）中的八个元素都分别转换为string
+            #每转换一次，执行下插入语句，并执行保存
+
+        sql = '''
+            INSERT INTO movie250(
+            info_link, pic_link, cname, ename, score, rated, instroduction, info)
+            values(%s)'''%",".join(data)
+        #把转换的第一个data的八个元素插入数据表中
+        #使用 ",".join(data) 将生成的新列表中的元素以逗号分隔拼接成一个字符串。
+        cursor.execute(sql)
+        conn.commit()
+        #保存完毕这一个sql语句，就取执行for data in datalist语句，接着是第二个data中的每个元素的转换和保存
+    cursor.close()
+    conn.close()
+
+
+def init_db(dbpath):
+    sql = '''
+        CREATE TABLE movie250
+            (id integer primary key autoincrement, 
+            info_link text,
+            pic_link text,
+            cname varchar,
+            ename varchar,
+            score numeric,
+            rated numeric,
+            instroduction text,
+            info text )
+    '''   #创建并初始化数据库
+    #	当"文本数据"被插入到亲缘性为NUMERIC的字段中时，如果转换操作不会导致数据信息丢失以及完全可逆，
+    #	那么SQLite就会将该 "文本数据" 转换为INTEGER或REAL类型的数据，如果转换失败，SQLite仍会以TEXT方式存储该数据
+    #	对于亲缘类型为INTEGER的字段，其规则等同于NUMERIC，唯一差别是在执行CAST表达式时。
+    conn = sqlite3.connect(dbpath) #如果数据库存在就连接，不存在就创建
+    cursor = conn.cursor()
+    cursor.execute(sql)   #执行   （只是查询的话，就不需要commit的了）
+    conn.commit()    #提交修改命令并永久化
+    conn.close()
 
 
 if __name__ == "__main__":
