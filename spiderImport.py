@@ -3,57 +3,60 @@
 # Motto : Practice makes perfect.
 # Time : 23/1/2023 9:27 pm
 
-from bs4 import BeautifulSoup     #网页解析，获取数据 （2）拆分爬完的数据
-import re     # 正则表达式，文字匹配  （3）进行数据的提炼
-import urllib.request, urllib.error  # 制定URL，获取网页数据 （（1）给网页就能爬）
-import xlwt  # 进行excel操作 （4）数据存入excel
-import sqlite3  #进行SQLite数据库操作  （5）数据存入数据库
+from bs4 import BeautifulSoup     #Web parsing, data retrieval (2), and splitting the scraped data."
+import re     # Regular expressions, text matching (3), and data extraction."
+import urllib.request, urllib.error  # Specify URL, retrieve web page data (1）: Crawling a webpage by providing the URL)）
+import xlwt  # Excel operations (4) - Saving data into Excel."
+import sqlite3  #SQLite database operations (5) - Storing data into the database.
 
-findLink = re.compile(r'<a href="(.*?)">') #?表示有可能会没有这个
-findImgScr = re.compile(r'<img.*src="(.*?)"', re.S) #.*表示img 和src之间一定会有若干数据（字符尽可能的多) 如果？表示可能没有 re.S忽视换行符
+findLink = re.compile(r'<a href="(.*?)">') # ? means its possible don't have * (any character)
+findImgScr = re.compile(r'<img.*src="(.*?)"', re.S) #".*" means there will be some data (as many characters as possible) between 'img' and 'src'. If '?' is used, it indicates that there may or may not be data present. 're.S' is used to ignore newline characters during the matching process.
 findTitle = re.compile(r'<span class="title">(.*?)</span>')
-findRating = re.compile(r'<span class="rating_num" property="v:average">(.*?)</span>') # 可以单独提取出(.*？）里的内容，而不是r里的全部
-findJudgeNumber = re.compile(r'<span>(\d*)人评价</span>') #\d*表示一个或多个数字，也就是我们要找的人数 如果只是\d就会查找一个数字
+findRating = re.compile(r'<span class="rating_num" property="v:average">(.*?)</span>') # It is possible to extract the content inside (.*?) separately, rather than the entire match in 'r'
+findJudgeNumber = re.compile(r'<span>(\d*)人评价</span>') # \d* represents one or more digits, which is the number of people we are looking for. If it is just '\d', it will match a single digit."
 findInq = re.compile(r'<span class="inq">(.*?)</span>')
 findBd = re.compile(r'<p class="">(.*?)</p>', re.S)
 
 #（1）爬取网页
 
 def main():
-    #选择要爬取的网页
+    #Select the webpage to be crawled.
     baseurl = "https://movie.douban.com/top250?start="
-    #将爬取的网页放入datalist里
+    #Put the crawled webpage into a datalist.
     datalist = get_data(baseurl)
-    #生成excel文件，将获取对数据存入该文件中
+    #Generate an Excel file and store the retrieved data into that file.
     #savepath = "doubanTop250.xls"
-    print("Finished Python crawler")
-    dbpath = "Movie.db"
-    #存入数据库
     #saveData(datalist, savepath)
+    print("Finished Python crawler")
+
+    # save data into database
+    dbpath = "Movie.db"
     saveData2DB(datalist, dbpath)
     print("Successfully save")
 
     #askURL("https://movie.douban.com/top250?start=")
-    #调用askURL方法， 该方法实现了伪装，会返回爬取后的string类型的数据
+    #Call the askURL method, which implements spoofing, and it will return the crawled data in the form of a string.
 
 
-def get_data(baseurl):  #获取数据，方便调用，返回数据列表
+#Retrieve the data for easy access and return it as a list.
+def get_data(baseurl):
     datalist = []
-    for i in range(0, 10): #10次，每次25条，拿到所有的top250
+    for i in range(0, 10): #Get all the top 250 items, 25 items per request, for a total of 10 requests
         url = baseurl + str(i*25)
-        html = askURL(url) #保存获取到的网页源码
-        #注意爬到一个网页就要解析一次 解析数据也将放在此处
+        html = askURL(url)
+        #Save the retrieved webpage source code
+        #Each time a webpage is crawled, data parsing will be performed right after to extract the relevant information.
 
-    #（2）逐一解析数据
+    #（2）Parse the data one by one.
         soup = BeautifulSoup(html, "html.parser")
-        for item in soup.find_all("div", class_="item"):  #查找符合要求的字符串，形成列表
+        for item in soup.find_all("div", class_="item"):  #Search for strings that meet the criteria and form a list.
             # print(item)
-            data = []  # 保存一部电影的所有信息
+            data = []  # Save all the information of a movie
             item = str(item)
 
-            link = re.findall(findLink, item)[0] #再在列表里面找link
-            # tips: findall所带的参数，第一个必须是正则表达式，第二个必须是string
-            #  findall将会返回列表 findall[0]则返回的是列表里的第一个参数，这里就是链接啦！
+            link = re.findall(findLink, item)[0] #Then, search for links within the list
+            # tips: findall: The first parameter must be a regular expression, and the second parameter must be a string
+            #  findall will get a list    findall[0]will get the first element from list. Here, it's a link.
             data.append(link)
             imgSCR = re.findall(findImgScr,item)[0]
             data.append(imgSCR)
@@ -62,12 +65,12 @@ def get_data(baseurl):  #获取数据，方便调用，返回数据列表
             titles = re.findall(findTitle, item)
             if(len(titles) == 2):
                 ctitle = titles[0]
-                data.append(ctitle)   #添加中文名
-                otitle = titles[1].replace("/", '').replace("\xa0", '')  #去掉无关的信息
-                data.append(otitle)   #添加外国名
+                data.append(ctitle)   #Add Chinese name
+                otitle = titles[1].replace("/", '').replace("\xa0", '')  #Remove irrelevant information.
+                data.append(otitle)   #Add other name with different languages.
             else:
                 data.append(titles[0])
-                data.append(' ')   #当出现没有外国名时，外国名留空就行了
+                data.append(' ')   #When there is no foreign name available, leave the foreign name field empty.
 
             rating = re.findall(findRating, item)[0]
             data.append(rating)
@@ -80,51 +83,53 @@ def get_data(baseurl):  #获取数据，方便调用，返回数据列表
                 inq = inq[0].replace("。", " ")
                 data.append(inq)
             else:
-                data.append(" ")     #留空，如果没有的话
+                data.append(" ")
+                #Leave it blank if it's not available.
 
             bd = re.findall(findBd, item)[0]
-            bd = re.sub("\xa0", " ", bd)   # 把"&nbsp;"替换为空格
-            bd = re.sub('<br(\s+)?/>(\s+)?'," ",bd)   #去掉<br/>
+            bd = re.sub("\xa0", " ", bd)   # replace "&nbsp;" to a blank
+            bd = re.sub('<br(\s+)?/>(\s+)?'," ",bd)   #move <br/>
             bd = re.sub("\n", " ", bd)
-            bd = re.sub("/", '', bd)   #再把/替换为空格
-            data.append(bd.strip())  #strip()去掉前后的空格
-            datalist.append(data)    #把处理好的一部电影的信息放入datalist
+            bd = re.sub("/", '', bd)   #replace / to a blank
+            data.append(bd.strip())  #strip() removes leading or trailing spaces.
+            datalist.append(data)    #Put the processed information of a movie into the datalist.
 
             # for span in soup.find_all("span",class_="title"):
-        #     print(span)  # 爬取符合网页属性的数据 这样就能找到想要的东西。
+        #     print(span)  #Crawl the data that matches the webpage attributes, and this way, we can find what we are looking for.
     # print(datalist)
     return datalist
 
-#得到指定一个URL的网页内容
+#Retrieve the content of a specified URL webpage.
+
 def askURL(url):
     head = {
        "user-agent":"Mozilla / 5.0(Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36(KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36"
     }
-#伪装的本质是告诉服务器我们可以接受什么样的文件
+    # The essence of spoofing is to inform the server what type of files we can accept.
 
     request = urllib.request.Request(url, headers=head)
     html = ""
     try:
         response = urllib.request.urlopen(request)
-        #发消息用的是urlopen ，得到的消息保存为response
+        #send information by urlopen ，get and save information by response
         html = response.read().decode("utf-8")
         # print(html)
     except urllib.error.URLError as e:
-        #检测可能的错误，查询错误哦的代码和原因
+        #Detect potential errors and query error codes and their reasons.
         if hasattr(e, "code"):
             print(e.code)
         if hasattr(e,"reaseon"):
             print(e.reason)
     return  html
 
-#（3）保存数据
+#（3）save data into Excel
 def saveData(datalist, savepath):
     print("save...")
-    book = xlwt.Workbook(encoding="utf-8", style_compression=0)  # 创建workbook对象
+    book = xlwt.Workbook(encoding="utf-8", style_compression=0)  # create the object of workbook
     sheet = book.add_sheet("MoveTop250", cell_overwrite_ok=True)
     col = ("电影详情链接", "图片链接", "影片中文名", "影片外国名", "评分", "评价数", "概况", "相关信息")
     for i in range(0, 8):
-        sheet.write(0, i, col[i])  #写入列名
+        sheet.write(0, i, col[i])  #Write column headers.
     for i in range(0, 250):
         print("No.%d"%(i+1))
         data = datalist[i]
@@ -133,37 +138,37 @@ def saveData(datalist, savepath):
 
     book.save(savepath)
 
-
+#or (3)save data into a database
 def saveData2DB(datalist, dbpath):
     init_db(dbpath)
     conn = sqlite3.connect(dbpath)
     cursor = conn.cursor()
     for data in datalist:
-        #datalist是250个list 组成
-        #把datalist中的每个list依次赋值给data, 也就是一个data就是一个list
+        #datalist is consist of 250 lists
+        #Assign each list in the datalist to the variable "data" one by one, so that each "data" represents a separate list.
         for index in range(len(data)):
-            #表示data列表的长度，也就是列表中的元素个数
-            #把一个data(本身是list）中的每一个元素提取出来依次赋值给index
+            #The length of the data list, i.e., the number of elements in the list.
+            #Extract each element from a "data" (which is itself a list) and assign them one by one to the variable "index."
             if index == 4 or index == 5:
                 continue
             data[index] = '"'+data[index]+'"'
-            #把每一个元素都添加”“来转换为string语句，用于数据库的插入，但并不是每个字符都需要转为string
-            #这样先把一个data（本身是list）中的八个元素都分别转换为string
-            #每转换一次，执行下插入语句，并执行保存
+            #Add double quotes to each element to convert them into string format, which is used for database insertion.
+            # However, not every character needs to be converted to a string.
+            #In this way, convert the eight elements of a "data" (which is itself a list) into strings one by one.
+            #After each conversion, execute the insertion statement and perform the save operation.
 
         sql = '''
             INSERT INTO movie250(
             info_link, pic_link, cname, ename, score, rated, instroduction, info)
             values(%s)'''%",".join(data)
-        #把转换的第一个data的八个元素插入数据表中
-        #使用 ",".join(data) 将生成的新列表中的元素以逗号分隔拼接成一个字符串。
+        #Insert the eight converted elements from the first "data" into the database table.
+        #Using ",".join(data) will concatenate the elements of the newly generated list into a single string, separated by commas.
         cursor.execute(sql)
         conn.commit()
-        #保存完毕这一个sql语句，就取执行for data in datalist语句，接着是第二个data中的每个元素的转换和保存
     cursor.close()
     conn.close()
 
-
+#Define the basic construction of the database.
 def init_db(dbpath):
     sql = '''
         CREATE TABLE movie250
@@ -176,20 +181,14 @@ def init_db(dbpath):
             rated numeric,
             instroduction text,
             info text )
-    '''   #创建并初始化数据库
-    #	当"文本数据"被插入到亲缘性为NUMERIC的字段中时，如果转换操作不会导致数据信息丢失以及完全可逆，
-    #	那么SQLite就会将该 "文本数据" 转换为INTEGER或REAL类型的数据，如果转换失败，SQLite仍会以TEXT方式存储该数据
-    #	对于亲缘类型为INTEGER的字段，其规则等同于NUMERIC，唯一差别是在执行CAST表达式时。
-    conn = sqlite3.connect(dbpath) #如果数据库存在就连接，不存在就创建
+    '''   #Create and initialize the database.
+    conn = sqlite3.connect(dbpath) #If the database exists, connect to it; if it doesn't exist, create it.
     cursor = conn.cursor()
-    cursor.execute(sql)   #执行   （只是查询的话，就不需要commit的了）
-    conn.commit()    #提交修改命令并永久化
+    cursor.execute(sql)   #execute   （Only for querying, there is no need for commit）
+    conn.commit()    #Submit the modification command and persist it permanently.
     conn.close()
 
 
 if __name__ == "__main__":
 #Let code be more clear and easier to read the logic.
-#只有当文件被直接执行时，才运行该代码块下的代码。
-
     main()
-#刚刚没有调用main方法。
