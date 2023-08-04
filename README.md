@@ -5,6 +5,7 @@ https://www.bilibili.com/video/BV12E411A7ZQ?p=29&vd_source=ed000ea92e40b552a9341
 
 From this practise, i can learn the logic about crawling a website i want. 
 
+
 (1)Choose the website we want to research. 
 
 Since some web pages are set up with an anti-crawler function, we may need to disguise ourselves as a normal user in this step in order to successfully crawl there.
