@@ -17,7 +17,7 @@ findJudgeNumber = re.compile(r'<span>(\d*)人评价</span>') # \d* represents on
 findInq = re.compile(r'<span class="inq">(.*?)</span>')
 findBd = re.compile(r'<p class="">(.*?)</p>', re.S)
 
-#（1）爬取网页
+#（1）Find the website
 
 def main():
     #Select the webpage to be crawled.
