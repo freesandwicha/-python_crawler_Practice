@@ -5,9 +5,12 @@ https://www.bilibili.com/video/BV12E411A7ZQ?p=29&vd_source=ed000ea92e40b552a9341
 
 From this practise, i can learn the logic about crawling a website i want. 
 (1)Choose the website we want to research. 
+
 Since some web pages are set up with an anti-crawler function, we may need to disguise ourselves as a normal user in this step in order to successfully crawl there.
+
 (2)Parsing the content components of a web page to get the data we want.
 Individual pages are different and will have different content to parse. Here, we also use regular expressions to retrieve data.
+
 （3）Save data into Excel and database.
 
 
